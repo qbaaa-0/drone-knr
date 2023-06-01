@@ -13,11 +13,12 @@ import math
 
 
 class Detection:
-    def __init__(self, bounding_box=(0, 0, 0, 0), color="", gps_pos=(0, 0)):
+    def __init__(self, bounding_box=(0, 0, 0, 0), color="", gps_pos=(0, 0), rel_gps=(0, 0)):
         # Format x, y, w, h
         self.bounding_box = bounding_box
         self.color = color
         self.gps_pos = gps_pos
+        self.rel_gps = rel_gps
 
     def set_bounding_box(self, bb):
         self.bounding_box = bb
@@ -25,8 +26,8 @@ class Detection:
     def set_gps_pos(self, pos):
         self.gps_pos = pos
 
-    def get_bounding_box(self):
-        return self.bounding_box
+    def get_rel_gps(self):
+        return self.rel_gps
 
     def get_gps_pos(self):
         return self.gps_pos
@@ -67,6 +68,8 @@ class DetectorServer(Node):
         self.frame = None
         self.yaw = 0
         self.drone_amplitude = 0
+        self.x = 0 
+        self.y = 0
         self.get_logger().info('DetectorServer node created')
         # self.video_capture = cv2.VideoCapture(0)
         # while (self.video_capture.isOpened() == False):
@@ -105,6 +108,8 @@ class DetectorServer(Node):
         
         self.get_logger().info('Incoming detection request')
         self.drone_amplitude= -request.gps[2]
+        self.x = request.gps[0]
+        self.y = request.gps[1]
         self.yaw = request.yaw
         # self.read_frame()
         # self.update_position()
@@ -140,8 +145,9 @@ class DetectorServer(Node):
                 if area > 200:
                     x, y, w, h = cv2.boundingRect(cnt)
                     pos = self.det2pos((x, y, w, h))
+                    rel_pos = (self.x+pos[0], self.y+pos[1])
                     self.get_logger().info(f"Detection pos: {pos}")
-                    self.detections.append(Detection(bounding_box=(x, y, w, h), color=col, gps_pos=pos))
+                    self.detections.append(Detection(bounding_box=(x, y, w, h), color=col, gps_pos=pos, rel_gps=rel_pos))
 
     def read_frame(self):
         ret, frame = self.video_capture.read()
@@ -160,6 +166,7 @@ class DetectorServer(Node):
                                           detection.get_bounding_box()[3]]
             detection_msg.color_name = detection.get_color()
             detection_msg.gps_position = [detection.get_gps_pos()[0], detection.get_gps_pos()[1]]
+            detection_msg.relative_position = [detection.get_rel_gps()[0], detection.get_rel_gps()[1]]
 
             temp_detection_list_msg.detections_list.append(detection_msg)
 

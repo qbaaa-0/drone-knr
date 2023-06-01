@@ -15,11 +15,12 @@ import haversine as hv
 import math
 
 class Detection:
-    def __init__(self, bounding_box=(0, 0, 0, 0), color="", gps_pos=(0, 0)):
+    def __init__(self, bounding_box=(0, 0, 0, 0), color="", gps_pos=(0, 0), rel_gps=(0, 0)):
         # Format x, y, w, h
         self.bounding_box = bounding_box
         self.color = color
         self.gps_pos = gps_pos
+        self.rel_gps = rel_gps
 
     def set_bounding_box(self, bb):
         self.bounding_box = bb
@@ -84,6 +85,8 @@ class Mission(Node):
         self.circles_counter = 0
         self.last_move = [0, 0]
         self.used_detections = []
+        self.brown_report = []
+        self.sick_report = []
 
     def set_area_coords(self, coordru, coordrd, coordld, coordlu):
         self.coordlu = coordlu
@@ -319,7 +322,7 @@ class Mission(Node):
 
     def correct_position(self):
         gps = self.get_gps()
-        det_list = self.send_detection_request(gps=gps, yaw=self.current_yaw)
+        det_list = self.send_detection_request(info=1,gps=gps, yaw=self.current_yaw)
         current_det_list = []
         current_det = None
         for det in det_list:
