@@ -16,6 +16,7 @@ import haversine as hv
 class DroneHandler(Node):
     def __init__(self):
         super().__init__('drone_handler')
+        self.vehicle = None
 
         ## DECLARE SERVICES
         self.attitude = self.create_service(GetAttitude, 'get_attitude', self.get_attitude_callback)
@@ -40,7 +41,13 @@ class DroneHandler(Node):
         # args = parser.parse_args()
 
         # connection_string = args.connect
-        connection_string = '127.0.0.1:14550'
+
+        # ARDUPILOT
+        # connection_string = '127.0.0.1:14550'
+        # connection_string = None
+        
+        # WEBOTS
+        connection_string = 'tcp:127.0.0.1:5762'
 
         sitl = None
 
@@ -49,14 +56,18 @@ class DroneHandler(Node):
             import dronekit_sitl
             sitl = dronekit_sitl.start_default()
             connection_string = sitl.connection_string()
+
         baud_rate = 57600
-        self.get_logger().info("Connectiong with copter...")
-        self.vehicle = connect(connection_string, baud=baud_rate, wait_ready=False) #doesnt work with wait_ready=True
+        self.get_logger().info(f"Connectiong with copter at {connection_string}...")
+        # self.vehicle = connect(connection_string, baud=baud_rate, wait_ready=False) #doesnt work with wait_ready=True
+        self.vehicle = connect(connection_string, wait_ready=False) #doesnt work with wait_ready=True
+        print(self.vehicle)
         self.state = "OK"
         self.get_logger().info("Copter connected, ready to arm")
 
     def __del__(self):
-        self.vehicle.mode=VehicleMode("RTL")
+        if self.vehicle:
+            self.vehicle.mode=VehicleMode("RTL")
 
     def shoot_callback(self, goal_handle):
         self.get_logger().info(f"Incoming shoot goal for color: {goal_handle.request.color}")
